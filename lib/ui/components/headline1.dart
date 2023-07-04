@@ -9,6 +9,6 @@ class Headline1 extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(text.toUpperCase(),
         textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.headline1);
+        style: Theme.of(context).textTheme.displayLarge);
   }
 }
