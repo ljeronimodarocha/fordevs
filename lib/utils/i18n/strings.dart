@@ -8,8 +8,10 @@ class S {
 
   static String get addAccount => 'addAccount'.tr;
   static String get email => 'email'.tr;
+  static String get name => 'name'.tr;
   static String get enter => 'enter'.tr;
   static String get login => 'login'.tr;
   static String get password => 'password'.tr;
+  static String get confirmPassword => 'confirmPassword'.tr;
   static String get wait => 'wait'.tr;
 }

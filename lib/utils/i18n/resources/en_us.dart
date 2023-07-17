@@ -6,7 +6,9 @@ class EnUs extends Resource {
   String get msgRequiredField => 'Required field';
   String get msgUnexpectedError => 'Something went wrong. Try again later.';
 
+  String get confirmPassword => 'Confirm password';
   String get addAccount => 'Add account';
+  String get name => 'Name';
   String get email => 'Email';
   String get enter => 'Enter';
   String get login => 'Login';

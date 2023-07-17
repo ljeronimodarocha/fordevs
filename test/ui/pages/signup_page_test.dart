@@ -7,35 +7,46 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:mocktail/mocktail.dart';
 
-class LoginPresenterSpy extends Mock implements LoginPresenter {}
+class SignUpPresenterSpy extends Mock implements SignUpPresenter {}
 
 void main() {
-  late LoginPresenter presenter;
+  late SignUpPresenter presenter;
+  late StreamController<String> nameErrorController;
   late StreamController<String> emailErrorController;
   late StreamController<String> passwordErrorController;
+  late StreamController<String> passwordConfirmationErrorController;
   late StreamController<String> mainErrorController;
   late StreamController<String> navigateToController;
+
   late StreamController<bool> isFormValidController;
   late StreamController<bool> isLoadingController;
 
   void initStreams() {
+    nameErrorController = StreamController<String>();
     emailErrorController = StreamController<String>();
     passwordErrorController = StreamController<String>();
+    passwordConfirmationErrorController = StreamController<String>();
     mainErrorController = StreamController<String>();
     navigateToController = StreamController<String>();
+
     isFormValidController = StreamController<bool>();
     isLoadingController = StreamController<bool>();
   }
 
   void mockStreams() {
+    when(() => presenter.nameErrorStream)
+        .thenAnswer((_) => nameErrorController.stream);
     when(() => presenter.emailErrorStream)
         .thenAnswer((_) => emailErrorController.stream);
     when(() => presenter.passwordErrorStream)
         .thenAnswer((_) => passwordErrorController.stream);
+    when(() => presenter.passwordConfirmationErrorStream)
+        .thenAnswer((_) => passwordConfirmationErrorController.stream);
     when(() => presenter.mainErrorStream)
         .thenAnswer((_) => mainErrorController.stream);
     when(() => presenter.navigateToStream)
         .thenAnswer((_) => navigateToController.stream);
+
     when(() => presenter.isFormValidStream)
         .thenAnswer((_) => isFormValidController.stream);
     when(() => presenter.isLoadingStream)
@@ -43,28 +54,30 @@ void main() {
   }
 
   void closeStreams() {
+    nameErrorController.close();
     emailErrorController.close();
     passwordErrorController.close();
+    passwordConfirmationErrorController.close();
     mainErrorController.close();
     navigateToController.close();
+
     isFormValidController.close();
     isLoadingController.close();
   }
 
   Future<void> loadPage(WidgetTester tester) async {
-    presenter = LoginPresenterSpy();
+    presenter = SignUpPresenterSpy();
     initStreams();
     mockStreams();
-    final loginPage = GetMaterialApp(
-      locale: Locale('pt', 'BR'),
-      initialRoute: '/login',
+    final signUpPage = GetMaterialApp(
+      initialRoute: '/signUp',
       getPages: [
-        GetPage(name: '/login', page: () => LoginPage(presenter)),
+        GetPage(name: '/signUp', page: () => SignUpPage(presenter)),
         GetPage(
-            name: '/any_route', page: () => Scaffold(body: Text('fake page'))),
+            name: '/any_route', page: () => Scaffold(body: Text('fake page')))
       ],
     );
-    await tester.pumpWidget(loginPage);
+    await tester.pumpWidget(signUpPage);
   }
 
   tearDown(() {
@@ -74,6 +87,12 @@ void main() {
   testWidgets('Should load with correct initial state',
       (WidgetTester tester) async {
     await loadPage(tester);
+
+    final nameTextChildren = find.descendant(
+        of: find.bySemanticsLabel('name'), matching: find.byType(Text));
+    expect(nameTextChildren, findsOneWidget,
+        reason:
+            'when a TextFormField has only one text child, means it has no errors, since one of the childs is always the label text');
 
     final emailTextChildren = find.descendant(
         of: find.bySemanticsLabel('email'), matching: find.byType(Text));
@@ -87,6 +106,13 @@ void main() {
         reason:
             'when a TextFormField has only one text child, means it has no errors, since one of the childs is always the label text');
 
+    final passwordConfirmationTextChildren = find.descendant(
+        of: find.bySemanticsLabel('confirmPassword'),
+        matching: find.byType(Text));
+    expect(passwordConfirmationTextChildren, findsOneWidget,
+        reason:
+            'when a TextFormField has only one text child, means it has no errors, since one of the childs is always the label text');
+
     final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
     expect(button.onPressed, null);
     expect(find.byType(CircularProgressIndicator), findsNothing);
@@ -96,6 +122,10 @@ void main() {
       (WidgetTester tester) async {
     await loadPage(tester);
 
+    final name = faker.person.name();
+    await tester.enterText(find.bySemanticsLabel('name'), name);
+    verify(() => presenter.validateName(name));
+
     final email = faker.internet.email();
     await tester.enterText(find.bySemanticsLabel('email'), email);
     verify(() => presenter.validateEmail(email));
@@ -103,77 +133,68 @@ void main() {
     final password = faker.internet.password();
     await tester.enterText(find.bySemanticsLabel('password'), password);
     verify(() => presenter.validatePassword(password));
+
+    await tester.enterText(find.bySemanticsLabel('confirmPassword'), password);
+    verify(() => presenter.validatePasswordConfirmation(password));
   });
 
-  testWidgets('Should present error if email is invalid',
-      (WidgetTester tester) async {
+  testWidgets('Sould present name error', (WidgetTester tester) async {
     await loadPage(tester);
+    nameErrorController.add('any error');
+    await tester.pump();
+    expect(find.text('any error'), findsOneWidget);
 
+    nameErrorController.add("");
+    await tester.pump();
+    expect(
+        find.descendant(
+            of: find.bySemanticsLabel('name'), matching: find.byType(Text)),
+        findsOneWidget);
+  });
+
+  testWidgets('Sould present email error', (WidgetTester tester) async {
+    await loadPage(tester);
     emailErrorController.add('any error');
     await tester.pump();
-
     expect(find.text('any error'), findsOneWidget);
-  });
-
-  testWidgets('Should present no error if email is valid',
-      (WidgetTester tester) async {
-    await loadPage(tester);
 
     emailErrorController.add("");
     await tester.pump();
-
     expect(
         find.descendant(
             of: find.bySemanticsLabel('email'), matching: find.byType(Text)),
         findsOneWidget);
   });
 
-  testWidgets('Should present no error if email is valid 2',
-      (WidgetTester tester) async {
-    await loadPage(tester);
-
-    emailErrorController.add('');
-    await tester.pump();
-
-    expect(
-        find.descendant(
-            of: find.bySemanticsLabel('email'), matching: find.byType(Text)),
-        findsOneWidget);
-  });
-
-  testWidgets('Should present error if password is invalid',
-      (WidgetTester tester) async {
+  testWidgets('Should present password error', (WidgetTester tester) async {
     await loadPage(tester);
 
     passwordErrorController.add('any error');
     await tester.pump();
-
     expect(find.text('any error'), findsOneWidget);
-  });
-
-  testWidgets('Should present no error if password is valid',
-      (WidgetTester tester) async {
-    await loadPage(tester);
 
     passwordErrorController.add("");
     await tester.pump();
-
     expect(
         find.descendant(
             of: find.bySemanticsLabel('password'), matching: find.byType(Text)),
         findsOneWidget);
   });
 
-  testWidgets('Should present no error if password is valid 2',
+  testWidgets('Should present passwordConfirmation error',
       (WidgetTester tester) async {
     await loadPage(tester);
 
-    passwordErrorController.add('');
+    passwordConfirmationErrorController.add('any error');
     await tester.pump();
+    expect(find.text('any error'), findsOneWidget);
 
+    passwordConfirmationErrorController.add("");
+    await tester.pump();
     expect(
         find.descendant(
-            of: find.bySemanticsLabel('password'), matching: find.byType(Text)),
+            of: find.bySemanticsLabel('confirmPassword'),
+            matching: find.byType(Text)),
         findsOneWidget);
   });
 
@@ -199,10 +220,9 @@ void main() {
     expect(button.onPressed, null);
   });
 
-  testWidgets('Should call authentication on form submit',
-      (WidgetTester tester) async {
+  testWidgets('Should call signUp on form submit', (WidgetTester tester) async {
     await loadPage(tester);
-    when(() => presenter.auth()).thenAnswer((_) => Future.value());
+    when(() => presenter.signUp()).thenAnswer((_) => Future.value());
 
     isFormValidController.add(true);
     await tester.pump();
@@ -211,7 +231,7 @@ void main() {
     await tester.tap(button);
     await tester.pump();
 
-    verify(() => presenter.auth()).called(1);
+    verify(() => presenter.signUp()).called(1);
   });
 
   testWidgets('Should present loading', (WidgetTester tester) async {
@@ -234,7 +254,7 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
-  testWidgets('Should present error message if authentication fails',
+  testWidgets('Should present error message if signUp fails',
       (WidgetTester tester) async {
     await loadPage(tester);
 
@@ -244,7 +264,8 @@ void main() {
     expect(find.text('main error'), findsOneWidget);
   });
 
-  testWidgets('Should change page', (WidgetTester tester) async {
+  testWidgets('Should present error message if signUp throws',
+      (WidgetTester tester) async {
     await loadPage(tester);
 
     navigateToController.add('/any_route');
@@ -252,17 +273,5 @@ void main() {
 
     expect(Get.currentRoute, '/any_route');
     expect(find.text('fake page'), findsOneWidget);
-  });
-
-  testWidgets('Should not change page', (WidgetTester tester) async {
-    await loadPage(tester);
-
-    navigateToController.add('');
-    await tester.pump();
-    expect(Get.currentRoute, '/login');
-
-    navigateToController.add("");
-    await tester.pump();
-    expect(Get.currentRoute, '/login');
   });
 }

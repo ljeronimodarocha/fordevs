@@ -1,3 +1,4 @@
+import 'package:ForDev/ui/pages/pages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/route_manager.dart';
@@ -21,7 +22,7 @@ class App extends StatelessWidget {
     return GetMaterialApp(
       title: '4Dev',
       debugShowCheckedModeBanner: false,
-      locale: Locale('en', 'EUA'),
+      locale: Locale('pt', 'BR'),
       translations: GetxTranslations(),
       theme: makeAppTheme(),
       initialRoute: '/',
@@ -32,6 +33,10 @@ class App extends StatelessWidget {
         GetPage(
             name: '/surveys',
             page: () => Scaffold(body: Text('Enquetes')),
+            transition: Transition.fadeIn),
+        GetPage(
+            name: '/signUp',
+            page: () => Text(''),
             transition: Transition.fadeIn),
       ],
     );
