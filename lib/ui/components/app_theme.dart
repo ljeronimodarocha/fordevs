@@ -29,5 +29,9 @@ ThemeData makeAppTheme() {
       textTheme: textTheme,
       inputDecorationTheme: inputDecorationTheme,
       buttonTheme: buttonTheme,
-      colorScheme: ColorScheme.light(background: Colors.white));
+      colorScheme: ColorScheme.light(background: Colors.white),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ButtonStyle(
+        backgroundColor: MaterialStateProperty.all(primaryColor),
+      )));
 }

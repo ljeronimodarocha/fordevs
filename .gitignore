@@ -46,3 +46,4 @@ app.*.map.json
 # windows build
 /windows
 /web
+/android
